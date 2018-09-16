@@ -19,12 +19,6 @@ colnames(df_fire)[c(2,3)] <- c("lat", "long") # df_fireball
 df_fire <- convert_latlong(df_fire[ , 2],df_fire[ , 3])
 
 ## 2. Por cada meteorito / fireball, determino el pais que le corresponde utilizando el API de Google
-## Dado que el dataset de df_mete tiene mas de 45.000 rows y que el API de Google tienen limites y costos asociados a su uso
-## Trabajo solo con un 10% del dataset
-
-df_mete <- df_mete[complete.cases(df_mete[ , 8:9]),]
-df <- head(df_mete,4500)  
-
 ## Call function get_countries for df_mete
 countries <- get_countries(df)
 
@@ -74,24 +68,26 @@ df_finale <- df_finale %>%
 
 
 ## 5. Visualization
-#Colors from Viridis Palette
-A_col <- "#404788FF"
-B_col <- "#1F968BFF"
+## Colors from Viridis Palette
 
-df_finale$v_type <- "above"
+library(scales)
+n_df_finale <- as.integer(nrow(df_finale))
+v_colores <-  viridis(n_df_finale, option = "A")
+
+df_finale$values[df_finale$countries == "Antarctica"] <- 500
 
 #Order by 
 df_finale <-dplyr::arrange(df_finale, desc(values))# sort
 df_finale$countries <- factor(df_finale$countries, levels = df_finale$countries)  # convert to factor to retain sorted order in plot.
 
+library(viridis)
 require(cowplot)
 require(grid)
+
 ggplot(df_finale, aes(x=countries, y=values)) + 
-  geom_bar(stat='identity', aes(fill=v_type), width=.5)  +
-  scale_fill_manual(name="Q caidas", 
-                    labels = c("Arriba del promedio", "Abajo del promedio"), 
-                    values = c("above"=A_col, "below"=B_col),
-                    guide=FALSE) + 
+  geom_bar(stat='identity', aes(fill=v_colores), width=.5)  +
+  scale_fill_manual(values = v_colores,
+                    guide=FALSE) +
   labs(subtitle="Paises mas seguros e inseguros segun tendencia historica", 
        title= "Donde vivirias para evitar meteoritos y fireballs",
        caption = "NASA Fireball & Meteorites datasets | by thinkingondata.com") + 
